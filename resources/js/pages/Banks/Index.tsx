@@ -1,4 +1,4 @@
-// resources/js/Pages/Customers/Index.tsx
+// resources/js/Pages/Banks/Index.tsx
 
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import AppLayout from '@/layouts/app-layout';
@@ -19,17 +19,20 @@ import { Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, Transition } from '@headlessui/react';
 
-type Customer = {
+type Bank = {
   id: number;
+  bank_type: 'customer' | 'factory';
   name: string;
-  mobile: string;
+  swift_code: string | null;
   address: string | null;
+  phone: string | null;
+  email: string | null;
 };
 
 export default function Index() {
-  const { customers, toastData, filters } = usePage<{
-    customers: {
-      data: Customer[];
+  const { banks, toastData, filters } = usePage<{
+    banks: {
+      data: Bank[];
       current_page?: number;
       last_page?: number;
       meta?: { current_page: number; last_page: number };
@@ -38,7 +41,7 @@ export default function Index() {
     filters: { search?: string };
   }>().props;
 
-  // seed search from filters.search
+  // seed search from filters
   const [search, setSearch] = useState<string>(filters.search || '');
   const debounce = useRef<number>();
 
@@ -58,7 +61,7 @@ export default function Index() {
     clearTimeout(debounce.current);
     debounce.current = window.setTimeout(() => {
       router.get(
-        route('customers.index'),
+        route('banks.index'),
         { search },
         { preserveState: true, replace: true }
       );
@@ -66,9 +69,9 @@ export default function Index() {
     return () => clearTimeout(debounce.current);
   }, [search]);
 
-  const data = customers.data || [];
-  const lastPage = customers.meta?.last_page ?? customers.last_page ?? 1;
-  const currentPage = customers.meta?.current_page ?? customers.current_page ?? 1;
+  const data = banks.data || [];
+  const lastPage = banks.meta?.last_page ?? banks.last_page ?? 1;
+  const currentPage = banks.meta?.current_page ?? banks.current_page ?? 1;
 
   // delete modal state
   const [isConfirmOpen, setConfirmOpen] = useState(false);
@@ -80,7 +83,7 @@ export default function Index() {
   };
   const handleConfirmDelete = () => {
     if (deletingId !== null) {
-      router.delete(route('customers.destroy', deletingId));
+      router.delete(route('banks.destroy', deletingId));
       setConfirmOpen(false);
     }
   };
@@ -89,50 +92,54 @@ export default function Index() {
     <AppLayout
       breadcrumbs={[
         { title: 'Dashboard', href: route('dashboard') },
-        { title: 'Customers', href: route('customers.index') },
+        { title: 'Banks',     href: route('banks.index') },
       ]}
     >
-      <Head title="Customers" />
+      <Head title="Banks" />
 
-      <div className="p-8 space-y-4">
-        {/* Search + New */}
+      <div className="p-8 overflow-y-auto space-y-4">
         <div className="flex items-center justify-between">
           <Input
-            placeholder="Search customers..."
+            placeholder="Search banks..."
             value={search}
             onChange={e => setSearch(e.currentTarget.value)}
             className="max-w-sm"
           />
           <Button asChild>
-            <Link href={route('customers.create')}>New Customer</Link>
+            <Link href={route('banks.create')}>Create New Bank</Link>
           </Button>
         </div>
 
-        {/* Table */}
         {data.length > 0 ? (
           <div className="overflow-hidden rounded-lg border border-gray-200">
             <Table className="min-w-full bg-white shadow-sm rounded">
               <TableHeader className="bg-gray-100">
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Mobile</TableHead>
-                  <TableHead>Address</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Swift Code</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.map(cust => (
-                  <TableRow key={cust.id}>
-                    <TableCell>{cust.name}</TableCell>
-                    <TableCell>{cust.mobile}</TableCell>
-                    <TableCell>{cust.address ?? '—'}</TableCell>
-                  <TableCell className="flex justify-end items-center space-x-2">
-  <Link href={route('customers.edit', cust.id)}>
+                {data.map(bank => (
+                  <TableRow key={bank.id}>
+                    <TableCell>{bank.name}</TableCell>
+                    <TableCell>
+                      {bank.bank_type === 'customer' ? 'Customer' : 'Factory'}
+                    </TableCell>
+                    <TableCell>{bank.swift_code ?? '—'}</TableCell>
+                    <TableCell>{bank.phone ?? '—'}</TableCell>
+                    <TableCell>{bank.email ?? '—'}</TableCell>
+                 <TableCell className="flex justify-end items-center space-x-2">
+  <Link href={route('banks.edit', bank.id)}>
     <Edit size={16} className="cursor-pointer" />
   </Link>
   <button
     type="button"
-    onClick={() => onDeleteClick(cust.id)}
+    onClick={() => onDeleteClick(bank.id)}
     className="cursor-pointer"
   >
     <Trash2 size={16} className="text-red-600" />
@@ -146,11 +153,10 @@ export default function Index() {
           </div>
         ) : (
           <Table>
-            <TableCaption>No customers yet.</TableCaption>
+            <TableCaption>No banks have been added yet.</TableCaption>
           </Table>
         )}
 
-        {/* Pagination */}
         {lastPage > 1 && (
           <div className="flex justify-center space-x-2">
             {Array.from({ length: lastPage }, (_, i) => i + 1).map(p => (
@@ -160,7 +166,7 @@ export default function Index() {
                 size="sm"
                 onClick={() =>
                   router.get(
-                    route('customers.index'),
+                    route('banks.index'),
                     { page: p, search },
                     { preserveState: true, replace: true }
                   )
@@ -204,22 +210,19 @@ export default function Index() {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900"
-                  >
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                     Confirm Deletion
                   </Dialog.Title>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Are you sure you want to delete this customer? This action cannot be undone.
+                      Are you sure you want to delete this bank? This action cannot be undone.
                     </p>
                   </div>
                   <div className="mt-4 flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                    <Button variant="outline" type="button" onClick={() => setConfirmOpen(false)}>
                       Cancel
                     </Button>
-                    <Button variant="destructive" onClick={handleConfirmDelete}>
+                    <Button variant="destructive" type="button" onClick={handleConfirmDelete}>
                       Delete
                     </Button>
                   </div>

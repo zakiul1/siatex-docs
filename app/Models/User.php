@@ -85,4 +85,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(Payment::class);
     }
+    public function banks()
+    {
+        return $this->hasMany(Bank::class);
+    }
+    public function factories()
+    {
+        return $this->hasMany(\App\Models\Factory::class);
+    }
+
 }

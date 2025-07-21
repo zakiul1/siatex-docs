@@ -63,7 +63,7 @@ class UserController extends Controller
             // If an exception occurs during creation, create an error toast
             $toast = [
                 'title' => 'Failed!',
-                'message' => 'Failed to create User. Please try again.' .  $e->getMessage(),
+                'message' => 'Failed to create User. Please try again.' . $e->getMessage(),
                 'type' => 'error',
             ];
             // Redirect back to the creation form with an error toast and input data

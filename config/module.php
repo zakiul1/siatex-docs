@@ -34,7 +34,7 @@ return [
             'icon' => 'UsersRound',
             'custom-route' => false,
         ],
-        'factory' => [
+        'factories' => [
             'actions' => ['read', 'write', 'delete'],
             'title' => 'Factories',
             'icon' => 'Tickets',

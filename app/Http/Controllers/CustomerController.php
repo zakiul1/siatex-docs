@@ -3,77 +3,68 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $customers = auth()->user()->customers()->paginate(10);
+        // grab the incoming search term (if any)
+        $search = $request->query('search');
+
+        // base query scoped to the current user
+        $query = auth()->user()->customers();
+
+        // when there's a search term, filter by name, mobile or address
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('mobile', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        // paginate, keep ?search= in links, newest first
+        $customers = $query
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->appends(['search' => $search]);
 
         return Inertia::render('Customers/Index', [
             'customers' => $customers,
+            'filters' => ['search' => $search],
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return Inertia::render('Customers/Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'mobile' => 'required|string|unique:customers',
             'address' => 'nullable|string',
         ]);
 
-        try {
-            auth()->user()->customers()->create($request->only(['name', 'mobile', 'address']));
-            $toast = [
+        auth()->user()->customers()->create($data);
+
+        return Redirect::route('customers.index')
+            ->with('toast', [
                 'title' => 'Success',
-                'message' => 'Customer created successfully.',
+                'message' => 'Customer created.',
                 'type' => 'success',
-            ];
-            return Redirect::route('customers.index')->with('toast', $toast);
-        } catch (Exception $e) {
-            $toast = [
-                'title' => 'Failed!',
-                'message' => 'Failed to create customer. Please try again. ' . $e->getMessage(),
-                'type' => 'error',
-            ];
-            return Redirect::back()->with('toast', $toast)->withInput();
-        }
+            ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Customer $customer)
-    {
-        return redirect()->route('customers.edit', $customer);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Customer $customer)
     {
         if ($customer->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
+            abort(403);
         }
 
         return Inertia::render('Customers/Edit', [
@@ -81,63 +72,41 @@ class CustomerController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Customer $customer)
     {
         if ($customer->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
+            abort(403);
         }
 
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
-            'mobile' => 'required|string|unique:customers,mobile,' . $customer->id,
+            'mobile' => "required|string|unique:customers,mobile,{$customer->id}",
             'address' => 'nullable|string',
         ]);
 
-        try {
-            $customer->update($request->only(['name', 'mobile', 'address']));
-            $toast = [
+        $customer->update($data);
+
+        return Redirect::route('customers.index')
+            ->with('toast', [
                 'title' => 'Success',
-                'message' => 'Customer updated successfully.',
+                'message' => 'Customer updated.',
                 'type' => 'success',
-            ];
-            return Redirect::route('customers.index')->with('toast', $toast);
-        } catch (Exception $e) {
-            $toast = [
-                'title' => 'Failed!',
-                'message' => 'Failed to update customer. Please try again. ' . $e->getMessage(),
-                'type' => 'error',
-            ];
-            return Redirect::back()->with('toast', $toast)->withInput();
-        }
+            ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Customer $customer)
     {
         if ($customer->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
+            abort(403);
         }
 
-        try {
-            $customer->delete();
-            $toast = [
+        $customer->delete();
+
+        return Redirect::route('customers.index')
+            ->with('toast', [
                 'title' => 'Success',
-                'message' => 'Customer deleted successfully.',
+                'message' => 'Customer deleted.',
                 'type' => 'success',
-            ];
-            return Redirect::route('customers.index')->with('toast', $toast);
-        } catch (Exception $e) {
-            $toast = [
-                'title' => 'Failed!',
-                'message' => 'Failed to delete customer. Please try again. ' . $e->getMessage(),
-                'type' => 'error',
-            ];
-            return Redirect::back()->with('toast', $toast)->withInput();
-        }
+            ]);
     }
 }
