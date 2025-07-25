@@ -94,4 +94,14 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Factory::class);
     }
 
+
+    /**
+     * Shippers that belong to this user.
+     */
+    public function shippers()
+    {
+        return $this->hasMany(Shipper::class);
+    }
+
+
 }

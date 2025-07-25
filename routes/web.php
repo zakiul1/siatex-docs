@@ -4,7 +4,9 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\FactoryController;
 use App\Http\Controllers\FactoryCategoryController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ShipperController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRoleAndPermissions;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +42,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('customers.destroy')
         ->middleware(CheckRoleAndPermissions::class . ":User,secondary.customers.delete");
 
+    // Shipper Routes
+    Route::resource('shippers', ShipperController::class);
     // Bank Routes
     Route::resource('banks', BankController::class);
 
@@ -50,6 +54,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/factory-categories', [FactoryCategoryController::class, 'store'])
         ->name('factory-categories.store');
 
+
+    Route::resource('invoices', InvoiceController::class);
+
+    // for preview (before final save)
+    Route::post('invoices/preview', [InvoiceController::class, 'preview'])
+        ->name('invoices.preview');
     // User & Permissions Routes
     Route::resource('users', UserController::class)
         ->names('users')

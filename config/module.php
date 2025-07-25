@@ -2,7 +2,7 @@
 
 return [
     'primary' => [
-        'invoice' => [
+        'invoices' => [
             'actions' => ['read', 'write', 'delete'], // permission
             'title' => 'Invoices',
             'icon' => 'Boxes',
@@ -44,6 +44,12 @@ return [
             'actions' => ['read', 'write', 'delete'],
             'title' => 'Banks',
             'icon' => 'Tickets',
+            'custom-route' => false,
+        ],
+        'shippers' => [
+            'actions' => ['read', 'write', 'delete'],
+            'title' => 'Shippers',
+            'icon' => 'Truck',
             'custom-route' => false,
         ],
     ],

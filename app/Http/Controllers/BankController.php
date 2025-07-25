@@ -44,6 +44,7 @@ class BankController extends Controller
             'types' => [
                 ['value' => 'customer', 'label' => 'Customer Bank'],
                 ['value' => 'factory', 'label' => 'Factory Bank'],
+                ['value' => 'shipper', 'label' => 'Shipper Bank'],
             ],
         ]);
     }
@@ -51,7 +52,7 @@ class BankController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'bank_type' => 'required|in:customer,factory',
+            'bank_type' => 'required|in:customer,factory,shipper',
             'name' => 'required|string|max:255',
             'swift_code' => 'nullable|string|max:50',
             'address' => 'nullable|string',
@@ -80,6 +81,7 @@ class BankController extends Controller
             'types' => [
                 ['value' => 'customer', 'label' => 'Customer Bank'],
                 ['value' => 'factory', 'label' => 'Factory Bank'],
+                ['value' => 'shipper', 'label' => 'Shipper Bank'],
             ],
         ]);
     }
@@ -91,7 +93,7 @@ class BankController extends Controller
         }
 
         $data = $request->validate([
-            'bank_type' => 'required|in:customer,factory',
+            'bank_type' => 'required|in:customer,factory,shipper',
             'name' => 'required|string|max:255',
             'swift_code' => 'nullable|string|max:50',
             'address' => 'nullable|string',

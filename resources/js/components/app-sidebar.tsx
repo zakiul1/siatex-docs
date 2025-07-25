@@ -7,7 +7,7 @@ import { Link, usePage } from '@inertiajs/react';
 
 import AppLogo from './app-logo';
 
-import { Box, Images, Boxes, FileBox, Grid, HandCoins, LayoutGrid, ListTree, Store, UsersRound, Tickets, LucideIcon } from 'lucide-react';
+import { Box, Images, Boxes, FileBox, Grid, HandCoins, LayoutGrid, ListTree, Store, UsersRound, Tickets, LucideIcon,Truck } from 'lucide-react';
 import { hasPermission } from '@/lib/PermissionCheck';
 
 
@@ -22,6 +22,7 @@ const iconMap: Record<string, React.ComponentType> = {
     Store,
     UsersRound,
     Grid,
+    Truck,
     Tickets,
     default: LayoutGrid,
 };

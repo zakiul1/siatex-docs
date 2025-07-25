@@ -1,5 +1,3 @@
-// resources/js/Pages/Banks/Index.tsx
-
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -19,38 +17,31 @@ import { Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, Transition } from '@headlessui/react';
 
-type Bank = {
+type Shipper = {
   id: number;
-  bank_type: 'customer' | 'factory' | 'shipper';
   name: string;
-  swift_code: string | null;
-  address: string | null;
-  phone: string | null;
+  address: string;
+  phone: string;
   email: string | null;
+  bank_ids: number[];
 };
-// lookup for display labels
-const typeLabels: Record<Bank['bank_type'], string> = {
-  customer: 'Customer',
-  factory:  'Factory',
-  shipper:  'Shipper',
-};
+
 export default function Index() {
-  const { banks, toastData, filters } = usePage<{
-    banks: {
-      data: Bank[];
+  const { shippers, toastData, filters, bankLookup } = usePage<{
+    shippers: {
+      data?: Shipper[];
+      meta?: { current_page: number; last_page: number };
       current_page?: number;
       last_page?: number;
-      meta?: { current_page: number; last_page: number };
     };
     toastData?: { title: string; message: string; type: 'success' | 'error' };
     filters: { search?: string };
+    bankLookup: Record<number, string>;
   }>().props;
 
-  // seed search from filters
-  const [search, setSearch] = useState<string>(filters.search || '');
+  const [search, setSearch] = useState(filters.search || '');
   const debounce = useRef<number>();
 
-  // show toast after create/update/delete
   useEffect(() => {
     if (toastData) {
       toast(toastData.title, {
@@ -61,12 +52,11 @@ export default function Index() {
     }
   }, [toastData]);
 
-  // live search debounce
   useEffect(() => {
     clearTimeout(debounce.current);
     debounce.current = window.setTimeout(() => {
       router.get(
-        route('banks.index'),
+        route('shippers.index'),
         { search },
         { preserveState: true, replace: true }
       );
@@ -74,11 +64,11 @@ export default function Index() {
     return () => clearTimeout(debounce.current);
   }, [search]);
 
-  const data = banks.data || [];
-  const lastPage = banks.meta?.last_page ?? banks.last_page ?? 1;
-  const currentPage = banks.meta?.current_page ?? banks.current_page ?? 1;
+  const data = shippers.data || [];
+  const lastPage = shippers.meta?.last_page ?? shippers.last_page ?? 1;
+  const currentPage =
+    shippers.meta?.current_page ?? shippers.current_page ?? 1;
 
-  // delete modal state
   const [isConfirmOpen, setConfirmOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -88,7 +78,7 @@ export default function Index() {
   };
   const handleConfirmDelete = () => {
     if (deletingId !== null) {
-      router.delete(route('banks.destroy', deletingId));
+      router.delete(route('shippers.destroy', deletingId));
       setConfirmOpen(false);
     }
   };
@@ -97,21 +87,21 @@ export default function Index() {
     <AppLayout
       breadcrumbs={[
         { title: 'Dashboard', href: route('dashboard') },
-        { title: 'Banks',     href: route('banks.index') },
+        { title: 'Shippers', href: route('shippers.index') },
       ]}
     >
-      <Head title="Banks" />
+      <Head title="Shippers" />
 
-      <div className="p-8 overflow-y-auto space-y-4">
+      <div className="p-8 space-y-4">
         <div className="flex items-center justify-between">
           <Input
-            placeholder="Search banks..."
+            placeholder="Search shippers..."
             value={search}
-            onChange={e => setSearch(e.currentTarget.value)}
+            onChange={(e) => setSearch(e.currentTarget.value)}
             className="max-w-sm"
           />
           <Button asChild>
-            <Link href={route('banks.create')}>Create New Bank</Link>
+            <Link href={route('shippers.create')}>New Shipper</Link>
           </Button>
         </div>
 
@@ -121,34 +111,37 @@ export default function Index() {
               <TableHeader className="bg-gray-100">
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Swift Code</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Banks</TableHead>
+                  <TableHead>Address</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.map(bank => (
-                  <TableRow key={bank.id}>
-                    <TableCell>{bank.name}</TableCell>
-                  <TableCell>{typeLabels[bank.bank_type]}</TableCell>
-                    <TableCell>{bank.swift_code ?? '—'}</TableCell>
-                    <TableCell>{bank.phone ?? '—'}</TableCell>
-                    <TableCell>{bank.email ?? '—'}</TableCell>
-                 <TableCell className="flex justify-end items-center space-x-2">
-                    <Link href={route('banks.edit', bank.id)}>
-                      <Edit size={16} className="cursor-pointer" />
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteClick(bank.id)}
-                      className="cursor-pointer"
-                    >
-                      <Trash2 size={16} className="text-red-600" />
-                    </button>
-                  </TableCell>
-
+                {data.map((shipper) => (
+                  <TableRow key={shipper.id}>
+                    <TableCell>{shipper.name}</TableCell>
+                    <TableCell>{shipper.phone}</TableCell>
+                    <TableCell>{shipper.email ?? '—'}</TableCell>
+                    <TableCell>
+                      {(shipper.bank_ids || [])
+                        .map((id) => bankLookup[id] || '—')
+                        .join(', ')}
+                    </TableCell>
+                    <TableCell>{shipper.address ?? '—'}</TableCell>
+                    <TableCell className="flex justify-end items-center space-x-2">
+                      <Link href={route('shippers.edit', shipper.id)}>
+                        <Edit size={16} className="cursor-pointer" />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteClick(shipper.id)}
+                        className="cursor-pointer"
+                      >
+                        <Trash2 size={16} className="text-red-600" />
+                      </button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -156,20 +149,20 @@ export default function Index() {
           </div>
         ) : (
           <Table>
-            <TableCaption>No banks have been added yet.</TableCaption>
+            <TableCaption>No shippers yet.</TableCaption>
           </Table>
         )}
 
         {lastPage > 1 && (
           <div className="flex justify-center space-x-2">
-            {Array.from({ length: lastPage }, (_, i) => i + 1).map(p => (
+            {Array.from({ length: lastPage }, (_, i) => i + 1).map((p) => (
               <Button
                 key={p}
                 variant={currentPage === p ? 'default' : 'outline'}
                 size="sm"
                 onClick={() =>
                   router.get(
-                    route('banks.index'),
+                    route('shippers.index'),
                     { page: p, search },
                     { preserveState: true, replace: true }
                   )
@@ -182,7 +175,6 @@ export default function Index() {
         )}
       </div>
 
-      {/* Confirm Delete Modal */}
       <Transition appear show={isConfirmOpen} as={Fragment}>
         <Dialog
           as="div"
@@ -190,13 +182,13 @@ export default function Index() {
           onClose={() => setConfirmOpen(false)}
         >
           <Transition.Child
-            as={Fragment}
             enter="ease-out duration-300"
             enterFrom="opacity-0"
             enterTo="opacity-100"
             leave="ease-in duration-200"
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
+            as={Fragment}
           >
             <div className="fixed inset-0 bg-black bg-opacity-25" />
           </Transition.Child>
@@ -204,28 +196,35 @@ export default function Index() {
           <div className="fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-center justify-center p-4 text-center">
               <Transition.Child
-                as={Fragment}
                 enter="ease-out duration-300"
                 enterFrom="opacity-0 scale-95"
                 enterTo="opacity-100 scale-100"
                 leave="ease-in duration-200"
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
+                as={Fragment}
               >
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
                     Confirm Deletion
                   </Dialog.Title>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Are you sure you want to delete this bank? This action cannot be undone.
+                      Are you sure you want to delete this shipper? This action
+                      cannot be undone.
                     </p>
                   </div>
                   <div className="mt-4 flex justify-end space-x-2">
-                    <Button variant="outline" type="button" onClick={() => setConfirmOpen(false)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setConfirmOpen(false)}
+                    >
                       Cancel
                     </Button>
-                    <Button variant="destructive" type="button" onClick={handleConfirmDelete}>
+                    <Button variant="destructive" onClick={handleConfirmDelete}>
                       Delete
                     </Button>
                   </div>
