@@ -1,141 +1,101 @@
-// resources/js/Pages/Invoices/Preview.tsx
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { route } from 'ziggy-js';
 import { Button } from '@/components/ui/button';
 
 export default function Preview() {
   const { invoice } = usePage<{ invoice: any }>().props;
-  const isSales = invoice.type === 'sales';
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { title: 'Dashboard', href: route('dashboard') },
-        { title: 'Invoices', href: route('invoices.index') },
-        { title: 'Preview', href: '#' },
-      ]}
-    >
-      <Head title="Invoice Preview" />
+    <AppLayout>
+      <Head title="Preview Invoice" />
 
-      <div className="p-6 bg-white rounded shadow space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold">
-            {isSales ? 'Sales Invoice' : 'Sample Invoice'}
-          </h1>
-          <div className="space-x-2">
-            <Button asChild size="sm">
-              <Link href={route('invoices.create')}>+ New Invoice</Link>
-            </Button>
-            {invoice.id && (
-              <Button asChild size="sm">
-                <Link href={route('invoices.edit', invoice.id)}>Edit This</Link>
-              </Button>
-            )}
-          </div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold">Preview {invoice.type} Invoice</h1>
+        <div className="space-x-2">
+          <Link href={route('invoices.create', { type: invoice.type })}>
+            <Button>New {invoice.type}</Button>
+          </Link>
+          <Link href={route('invoices.edit', invoice.id)}>
+            <Button>Edit {invoice.type}</Button>
+          </Link>
         </div>
+      </div>
 
-        {/* Header */}
-        <div className="grid grid-cols-2 gap-4">
+      <div className="border p-4 bg-white">
+        <div className="flex justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold">{invoice.shipper.name}</h2>
-            <p>{invoice.shipper.address}</p>
-            {/* …phone, email, etc if available */}
+            <h2 className="font-bold">{invoice.shipper.name}</h2>
+            {/* you can render full shipper address fields here */}
           </div>
-          <div className="text-right">
-            <div className="font-medium">INVOICE No.</div>
-            <div className="mt-1 inline-block bg-gray-200 px-3 py-1 rounded">
-              {invoice.invoice_number}
-            </div>
+          <div>
+            <label className="block text-sm">Invoice No.</label>
+            <input
+              readOnly
+              value={invoice.invoice_number}
+              className="border-gray-300 rounded-md p-1 w-32 text-right"
+            />
           </div>
         </div>
 
-        {/* Details vs Dates */}
-        {isSales ? (
-          <table className="w-full border mb-4">
-            <thead className="bg-gray-100">
-              <tr>
-                {['Issue Date','Delivery Date','Payment Mode','Terms','Currency'].map(h => (
-                  <th key={h} className="px-2 py-1 border">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="px-2 py-1 border">{invoice.issue_date}</td>
-                <td className="px-2 py-1 border">{invoice.delivery_date}</td>
-                <td className="px-2 py-1 border">{invoice.payment_mode}</td>
-                <td className="px-2 py-1 border">{invoice.terms_of_shipment}</td>
-                <td className="px-2 py-1 border">{invoice.currency}</td>
-              </tr>
-            </tbody>
-          </table>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="border p-2">
-              <h3 className="font-medium">Details</h3>
-              <p>Date: {invoice.issue_date}</p>
-              <p>Buyer Acct: {invoice.buyer_account}</p>
-              <p>Shipment Terms: {invoice.shipment_terms}</p>
-              <p>Courier: {invoice.courier_name}</p>
-              <p>Tracking #: {invoice.tracking_number}</p>
-            </div>
-            <div className="border p-2">
-              <h3 className="font-medium">Receiver</h3>
-              <p>{invoice.customer.name}</p>
-              <p>{invoice.customer.address}</p>
-              {/* …attention, etc */}
-            </div>
+        <div className="flex mb-4 space-x-4">
+          <div className="flex-1 border bg-gray-50 p-2">
+            <h3 className="font-medium mb-2">Details:</h3>
+            <p>Date: {new Date(invoice.created_at).toLocaleDateString()}</p>
+            <p>Buyer Account: {invoice.buyer_account}</p>
+            <p>Shipment Terms: {invoice.shipment_terms}</p>
+            <p>Courier Name: {invoice.courier_name}</p>
+            <p>Tracking No.: {invoice.tracking_number}</p>
           </div>
-        )}
+          <div className="flex-1 border bg-gray-50 p-2">
+            <h3 className="font-medium mb-2">Receiver:</h3>
+            <h4 className="font-semibold">{invoice.customer.name}</h4>
+            {/* render full customer address */}
+          </div>
+        </div>
 
-        {/* Line Items */}
-        <table className="min-w-full border">
+        <table className="w-full border">
           <thead className="bg-gray-100">
             <tr>
-              {[
-                'Art Num','Description','Size',
-                isSales ? 'Qty' : 'HS Code',
-                'Unit Price','Sub‑Total'
-              ].map(h => (
-                <th key={h} className="px-2 py-1 border">{h}</th>
-              ))}
+              <th>Art Num</th>
+              <th>Description</th>
+              <th>Size</th>
+              <th>HS Code</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th>Sub Total</th>
             </tr>
           </thead>
           <tbody>
-            {invoice.items.map((it:any, idx:number) => (
-              <tr key={idx}>
-                <td className="px-2 py-1 border">{it.art_num}</td>
-                <td className="px-2 py-1 border">{it.description}</td>
-                <td className="px-2 py-1 border">{it.size}</td>
-                <td className="px-2 py-1 border">
-                  {isSales ? it.quantity : it.hs_code}
-                </td>
-                <td className="px-2 py-1 border">
-                  ${it.unit_price.toFixed(2)}
-                </td>
-                <td className="px-2 py-1 border">
-                  ${it.sub_total.toFixed(2)}
-                </td>
+            {invoice.items.map((it: any) => (
+              <tr key={it.id}>
+                <td className="px-2">{it.art_num}</td>
+                <td className="px-2">{it.description}</td>
+                <td className="px-2">{it.size}</td>
+                <td className="px-2">{it.hs_code}</td>
+                <td className="px-2">{it.quantity}</td>
+                <td className="px-2">{it.unit_price.toFixed(2)}</td>
+                <td className="px-2">{it.sub_total.toFixed(2)}</td>
               </tr>
             ))}
+          </tbody>
+          <tfoot>
             <tr>
-              <td colSpan={isSales ? 4 : 5} className="px-2 py-1 text-right font-semibold border">
-                Total:
-              </td>
-              <td className="px-2 py-1 font-semibold border">
-                ${invoice.total_amount.toFixed(2)}
+              <td colSpan={6} className="text-right pr-4 font-medium">Total:</td>
+              <td className="px-2 font-semibold">
+                {invoice.total_price.toFixed(2)}
               </td>
             </tr>
-          </tbody>
+          </tfoot>
         </table>
 
-        {/* Notes */}
-        <div>
-          <h3 className="font-medium">Terms &amp; Remarks</h3>
-          <p className="mt-1 whitespace-pre-line">{invoice.notes}</p>
-        </div>
+        {invoice.notes && (
+          <div className="mt-4">
+            <h3 className="font-medium">Notes:</h3>
+            <p>{invoice.notes}</p>
+          </div>
+        )}
       </div>
     </AppLayout>
   );

@@ -1,290 +1,263 @@
-// resources/js/Pages/Invoices/Form.tsx
-import React, { useEffect } from 'react';
-import AppLayout from '@/layouts/app-layout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from '@inertiajs/react';
 import { route } from 'ziggy-js';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import InputError from '@/components/input-error';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
-type Props = {
-  invoice: any;      // null when creating
-  shippers: { id:number; name:string }[];
-  customers: { id:number; name:string }[];
+type Item = {
+  art_num?: string;
+  description: string;
+  size?: string;
+  hs_code?: string;
+  quantity: number;
+  unit_price: number;
 };
 
-export default function Form({ invoice, shippers, customers }: Props) {
+export default function Form({
+  invoice,
+  shippers,
+  customers,
+  type,
+  method,
+  action,
+}: {
+  invoice?: any;
+  shippers: any[];
+  customers: any[];
+  type: 'sample' | 'sales';
+  method: 'post' | 'put';
+  action: string;
+}) {
   const isEdit = Boolean(invoice);
-
-  const form = useForm({
-    type:             invoice?.type            || 'sample',
-    shipper_id:       invoice?.shipper_id      || '',
-    customer_id:      invoice?.customer_id     || '',
-    buyer_account:    invoice?.buyer_account   || '',
-    shipment_terms:   invoice?.shipment_terms  || '',
-    courier_name:     invoice?.courier_name    || '',
-    tracking_number:  invoice?.tracking_number || '',
-    notes:            invoice?.notes           || '',
-    issue_date:       invoice?.issue_date      || '',
-    delivery_date:    invoice?.delivery_date   || '',
-    payment_mode:     invoice?.payment_mode    || '',
-    terms_of_shipment:invoice?.terms_of_shipment|| '',
-    currency:         invoice?.currency        || '',
-    commercial_cost:  invoice?.commercial_cost || 0,
-    discount:         invoice?.discount        || 0,
-    fob_or_cif:       invoice?.fob_or_cif      || 'fob',
-    items:            invoice?.items.map((i:any) => ({
-                         art_num:    i.art_num,
-                         description:i.description,
-                         size:       i.size,
-                         hs_code:    i.hs_code,
-                         quantity:   i.quantity,
-                         unit_price: i.unit_price,
-                         sub_total:  i.sub_total,
-                       })) || [{
-                         art_num:'', description:'', size:'', hs_code:'',
-                         quantity:1, unit_price:0, sub_total:0
-                       }],
+  const { data, setData, post, put, processing, errors } = useForm({
+    type,
+    shipper_id: invoice?.shipper_id || '',
+    customer_id: invoice?.customer_id || '',
+    buyer_account: invoice?.buyer_account || '',
+    shipment_terms: invoice?.shipment_terms || 'Collect',
+    courier_name: invoice?.courier_name || '',
+    tracking_number: invoice?.tracking_number || '',
+    notes: invoice?.notes || '',
+    items: invoice
+      ? invoice.items.map((it: any) => ({ ...it }))
+      : [{ description: '', quantity: 1, unit_price: 0 }],
   });
 
-  // Add/remove line items
-  function addItem() {
-    form.setData('items', [
-      ...form.data.items,
-      { art_num:'', description:'', size:'', hs_code:'', quantity:1, unit_price:0, sub_total:0 }
-    ]);
-  }
-  function removeItem(i:number) {
-    form.setData('items', form.data.items.filter((_:any, idx:number) => idx !== i));
-  }
-  function updateItem(i:number, field:string, value:any) {
-    const items = [...form.data.items];
-    items[i][field] = value;
-    items[i].sub_total = items[i].quantity * items[i].unit_price;
-    form.setData('items', items);
-  }
-
-  // Submit vs Preview
-  function handleSave(e: React.FormEvent) {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const method = isEdit ? form.put : form.post;
-    method(route(isEdit ? 'invoices.update' : 'invoices.store', isEdit ? invoice.id : undefined));
-  }
-  function handlePreview(e: React.FormEvent) {
-    e.preventDefault();
-    form.post(route('invoices.preview'), { preserveState: true });
-  }
+    const fn = method === 'post' ? post : put;
+    fn(action, { data });
+  };
 
-  // scroll to top on errors
+  // recalc sub_totals & total_price
   useEffect(() => {
-    if (Object.keys(form.errors).length) window.scrollTo(0, 0);
-  }, [form.errors]);
+    const items = [...data.items].map(it => ({
+      ...it,
+      sub_total: it.quantity * it.unit_price,
+    }));
+    setData('items', items);
+    const total = items.reduce((sum, it) => sum + it.sub_total, 0);
+    setData('total_price', total);
+  }, [data.items]);
+
+  const addRow = () => {
+    setData('items', [...data.items, {
+      description: '', quantity: 1, unit_price: 0
+    }]);
+  };
+
+  const removeRow = (index: number) => {
+    const items = [...data.items];
+    items.splice(index,1);
+    setData('items', items);
+  };
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { title: 'Dashboard', href: route('dashboard') },
-        { title: 'Invoices', href: route('invoices.index') },
-        { title: isEdit ? 'Edit' : 'Create', href: isEdit
-            ? route('invoices.edit', invoice.id)
-            : route('invoices.create')
-        },
-      ]}
-    >
-      <Head title={isEdit ? 'Edit Invoice' : 'Create Invoice'} />
-
-      <div className="p-6 bg-white rounded shadow">
-        <h1 className="text-2xl font-semibold mb-4">
-          {isEdit ? 'Edit Invoice' : 'Create Invoice'}
+    <form onSubmit={submit}>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold">
+          {isEdit ? `Edit ${type}` : `Create ${type}`} Invoice
         </h1>
-
-        <form onSubmit={handleSave} className="space-y-6">
-          {/* Type */}
-          <div>
-            <Label>Type</Label>
-            <select
-              value={form.data.type}
-              onChange={e => form.setData('type', e.target.value)}
-              className="mt-1 block w-40 border rounded px-2 py-1"
-            >
-              <option value="sample">Sample</option>
-              <option value="sales">Sales</option>
-            </select>
-            <InputError message={form.errors.type} />
-          </div>
-
-          {/* Shipper & Customer */}
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              ['shipper_id','Shipper', shippers],
-              ['customer_id','Customer', customers],
-            ].map(([key,label,list]:any) => (
-              <div key={key}>
-                <Label>{label}</Label>
-                <select
-                  value={(form.data as any)[key]}
-                  onChange={e => form.setData(key, e.currentTarget.value)}
-                  className="mt-1 block w-full border rounded px-2 py-1"
-                >
-                  <option value="">– Select –</option>
-                  {list.map((x:any) => (
-                    <option key={x.id} value={x.id}>{x.name}</option>
-                  ))}
-                </select>
-                <InputError message={(form.errors as any)[key]} />
-              </div>
-            ))}
-          </div>
-
-          {/* Common fields */}
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              ['buyer_account','Buyer Account'],
-              ['shipment_terms','Shipment Terms'],
-              ['courier_name','Courier Name'],
-              ['tracking_number','Tracking #'],
-            ].map(([key,label]:any) => (
-              <div key={key}>
-                <Label>{label}</Label>
-                <Input
-                  value={(form.data as any)[key]}
-                  onChange={e => form.setData(key, e.currentTarget.value)}
-                  className="mt-1 w-full"
-                />
-                <InputError message={(form.errors as any)[key]} />
-              </div>
-            ))}
-          </div>
-
-          {/* Sales‑only */}
-          {form.data.type === 'sales' && (
-            <div className="grid grid-cols-3 gap-4 border-t pt-4">
-              {[
-                ['issue_date','Issue Date','date'],
-                ['delivery_date','Delivery Date','date'],
-                ['payment_mode','Payment Mode','text'],
-                ['terms_of_shipment','Terms of Shipment','text'],
-                ['currency','Currency','text'],
-                ['commercial_cost','Commercial Cost','number'],
-                ['discount','Discount','number'],
-              ].map(([key,label,type]:any) => (
-                <div key={key}>
-                  <Label>{label}</Label>
-                  <Input
-                    type={type}
-                    value={(form.data as any)[key]}
-                    onChange={e => form.setData(key, e.currentTarget.value)}
-                    className="mt-1 w-full"
-                  />
-                  <InputError message={(form.errors as any)[key]} />
-                </div>
-              ))}
-
-              {/* FOB/CIF */}
-              <div className="col-span-3 mt-2">
-                <Label>Terms (FOB / CIF)</Label>
-                <div className="space-x-4 mt-1">
-                  <label>
-                    <input
-                      type="radio"
-                      checked={form.data.fob_or_cif === 'fob'}
-                      onChange={() => form.setData('fob_or_cif','fob')}
-                    /> FOB
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      checked={form.data.fob_or_cif === 'cif'}
-                      onChange={() => form.setData('fob_or_cif','cif')}
-                    /> CIF
-                  </label>
-                </div>
-                <InputError message={form.errors.fob_or_cif} />
-              </div>
-            </div>
-          )}
-
-          {/* Line items */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full border">
-              <thead className="bg-gray-100">
-                <tr>
-                  {['Art Num','Description','Size','HS Code','Qty','Unit Price','Sub‑Total',''].map(h => (
-                    <th key={h} className="px-2 py-1 border">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {form.data.items.map((itm:any, idx:number) => (
-                  <tr key={idx}>
-                    {[
-                      ['art_num','text'],
-                      ['description','text'],
-                      ['size','text'],
-                      ['hs_code','text'],
-                      ['quantity','number'],
-                      ['unit_price','number'],
-                    ].map(([fld,typ]:any) => (
-                      <td key={fld} className="px-1 py-1 border">
-                        <input
-                          type={typ}
-                          value={itm[fld]}
-                          onChange={e =>
-                            updateItem(idx, fld,
-                              typ==='number'
-                                ? parseFloat(e.currentTarget.value||0)
-                                : e.currentTarget.value
-                            )}
-                          className="w-full border rounded px-1 py-0.5"
-                        />
-                      </td>
-                    ))}
-                    <td className="px-2 py-1 border text-right">
-                      {itm.sub_total.toFixed(2)}
-                    </td>
-                    <td className="px-2 py-1 border text-center">
-                      <button onClick={() => removeItem(idx)} className="text-red-600">×</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-2"
-              onClick={addItem}
-            >
-              + Add Line
-            </Button>
-            <InputError message={form.errors.items} />
-          </div>
-
-          {/* Notes */}
-          <div>
-            <Label>Notes / Remarks</Label>
-            <textarea
-              value={form.data.notes}
-              onChange={e => form.setData('notes', e.currentTarget.value)}
-              className="mt-1 w-full border rounded px-2 py-1"
-              rows={3}
-            />
-            <InputError message={form.errors.notes} />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center space-x-4 pt-4">
-            <Button onClick={handlePreview}>See Preview</Button>
-            <Button type="submit" variant="default">
-              {isEdit ? 'Save Changes' : 'Create Invoice'}
-            </Button>
-            <Link href={route('invoices.index')} className="text-gray-600 hover:underline">
-              Cancel
-            </Link>
-          </div>
-        </form>
+        <Input
+          label="Invoice No."
+          value={invoice?.invoice_number || '…'}
+          readOnly
+          className="w-32"
+        />
       </div>
-    </AppLayout>
+
+      {/* Top panels */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        {/* Shipper info */}
+        <div>
+          <label className="block font-medium">Shipper</label>
+          <select
+            value={data.shipper_id}
+            onChange={e => setData('shipper_id', e.target.value)}
+            className="block w-full border-gray-300 rounded-md"
+            required
+          >
+            <option value="">Select Shipper</option>
+            {shippers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          {/* you can render address fields here if needed */}
+        </div>
+
+        {/* Details panel */}
+        <div className="col-span-2 grid grid-cols-2 gap-4">
+          <div className="p-4 border bg-gray-50">
+            <h2 className="font-medium mb-2">Details:</h2>
+            <Input
+              label="Buyer Account"
+              value={data.buyer_account}
+              onChange={e => setData('buyer_account', e.target.value)}
+            />
+            <Select
+              label="Shipment Terms"
+              value={data.shipment_terms}
+              onChange={e => setData('shipment_terms', e.target.value)}
+              options={[
+                { value:'Collect', label:'Collect' },
+                { value:'Prepaid', label:'Prepaid' },
+              ]}
+            />
+            <Select
+              label="Courier Name"
+              value={data.courier_name}
+              onChange={e => setData('courier_name', e.target.value)}
+              options={[{value:'',label:'Select One'}, /* add your names */]}
+            />
+            <Input
+              label="Tracking Number"
+              value={data.tracking_number}
+              onChange={e => setData('tracking_number', e.target.value)}
+            />
+          </div>
+
+          {/* Receiver */}
+          <div className="p-4 border bg-gray-50">
+            <h2 className="font-medium mb-2">Receiver:</h2>
+            <select
+              value={data.customer_id}
+              onChange={e => setData('customer_id', e.target.value)}
+              className="block w-full border-gray-300 rounded-md mb-2"
+              required
+            >
+              <option value="">Select Customer</option>
+              {customers.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            {/* here render full customer address if desired */}
+          </div>
+        </div>
+      </div>
+
+      {/* Items table */}
+      <table className="w-full mb-4 border">
+        <thead className="bg-gray-100">
+          <tr>
+            <th>Art Num</th>
+            <th>Description</th>
+            <th>Size</th>
+            <th>HS Code</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Sub Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.items.map((it: Item & any, idx: number) => (
+            <tr key={idx}>
+              <td>
+                <Input
+                  value={it.art_num}
+                  onChange={e => {
+                    const v=e.target.value;
+                    setData(`items.${idx}.art_num`, v);
+                  }}
+                />
+              </td>
+              <td>
+                <Input
+                  value={it.description}
+                  onChange={e => {
+                    const v=e.target.value;
+                    setData(`items.${idx}.description`, v);
+                  }}
+                  required
+                />
+              </td>
+              <td>
+                <Input
+                  value={it.size}
+                  onChange={e => setData(`items.${idx}.size`, e.target.value)}
+                />
+              </td>
+              <td>
+                <Input
+                  value={it.hs_code}
+                  onChange={e => setData(`items.${idx}.hs_code`, e.target.value)}
+                />
+              </td>
+              <td>
+                <Input
+                  type="number"
+                  value={it.quantity}
+                  onChange={e => setData(`items.${idx}.quantity`, Number(e.target.value))}
+                  required
+                />
+              </td>
+              <td>
+                <Input
+                  type="number"
+                  value={it.unit_price}
+                  onChange={e => setData(`items.${idx}.unit_price`, Number(e.target.value))}
+                  required
+                />
+              </td>
+              <td>
+                <Input value={it.sub_total.toFixed(2)} readOnly />
+              </td>
+              <td>
+                <Button
+                  variant="destructive"
+                  onClick={() => removeRow(idx)}
+                >×</Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colSpan={6} className="text-right pr-4 font-medium">Total:</td>
+            <td colSpan={2}>
+              <Input value={data.items.reduce((s: number, it:any) => s + it.sub_total,0).toFixed(2)} readOnly />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div className="flex justify-between mb-4">
+        <Button onClick={addRow}>+ More</Button>
+        <Textarea
+          label="Notes"
+          value={data.notes}
+          onChange={e => setData('notes', e.target.value)}
+        />
+      </div>
+
+      <div className="text-right">
+        <Button type="submit" disabled={processing}>
+          {isEdit ? 'Update' : 'See Preview'}
+        </Button>
+      </div>
+    </form>
   );
 }
