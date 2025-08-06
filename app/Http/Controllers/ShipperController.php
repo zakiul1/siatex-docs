@@ -19,7 +19,8 @@ class ShipperController extends Controller
         }
 
         $shippers = $query->paginate(10)->appends(['search' => $search]);
-        // Only need shipper‑type banks for lookup, since others shouldn't appear
+
+        // Only need shipper‑type banks for lookup
         $bankLookup = auth()->user()
             ->banks()
             ->where('bank_type', 'shipper')
@@ -35,7 +36,6 @@ class ShipperController extends Controller
 
     public function create()
     {
-        // Only banks with bank_type = 'shipper'
         $banks = auth()->user()
             ->banks()
             ->where('bank_type', 'shipper')
@@ -53,11 +53,14 @@ class ShipperController extends Controller
             'address' => 'required|string|max:500',
             'phone' => 'required|string|unique:shippers,phone',
             'email' => 'nullable|email|max:255',
+            'website' => 'nullable|url|max:255',
+            'mobile' => 'nullable|string|max:50',
             'bank_ids' => 'nullable|array',
             'bank_ids.*' => 'integer|exists:banks,id',
         ]);
 
         $data['user_id'] = auth()->id();
+
         Shipper::create($data);
 
         return Redirect::route('shippers.index')
@@ -70,7 +73,6 @@ class ShipperController extends Controller
 
     public function edit(Shipper $shipper)
     {
-        // simple ownership check instead of authorize()
         if ($shipper->user_id !== auth()->id()) {
             abort(403);
         }
@@ -97,6 +99,8 @@ class ShipperController extends Controller
             'address' => 'required|string|max:500',
             'phone' => "required|string|unique:shippers,phone,{$shipper->id}",
             'email' => 'nullable|email|max:255',
+            'website' => 'nullable|url|max:255',
+            'mobile' => 'nullable|string|max:50',
             'bank_ids' => 'nullable|array',
             'bank_ids.*' => 'integer|exists:banks,id',
         ]);

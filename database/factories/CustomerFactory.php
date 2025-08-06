@@ -12,10 +12,11 @@ class CustomerFactory extends Factory
     public function definition()
     {
         return [
-            // these match your validation rules: name, mobile, address
-            'name' => $this->faker->name(),
-            'mobile' => $this->faker->unique()->phoneNumber(),
-            'address' => $this->faker->address(),
+            'name' => $this->faker->company,
+            'address' => $this->faker->streetAddress . "\n" . $this->faker->city . ', ' . $this->faker->state,
+            'mobile' => $this->faker->e164PhoneNumber,
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }

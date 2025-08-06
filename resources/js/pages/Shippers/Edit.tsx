@@ -1,3 +1,5 @@
+// resources/js/Pages/Shippers/Edit.tsx
+
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
@@ -10,13 +12,15 @@ import { Transition } from '@headlessui/react';
 import Select, { MultiValue } from 'react-select';
 
 type BankOption = { id: number; name: string };
-type Option = { value: number; label: string };
-type Shipper = {
+type Option     = { value: number; label: string };
+type Shipper    = {
   id: number;
   name: string;
   address: string;
   phone: string;
-  email: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  website?: string | null;
   bank_ids: number[];
 };
 
@@ -33,11 +37,13 @@ export default function Edit() {
 
   const { data, setData, put, processing, errors, recentlySuccessful } =
     useForm({
-      name: shipper.name,
-      address: shipper.address,
-      phone: shipper.phone,
-      email: shipper.email || '',
-      bank_ids: shipper.bank_ids,
+      name:      shipper.name,
+      address:   shipper.address,
+      phone:     shipper.phone,
+      mobile:    shipper.mobile || '',
+      email:     shipper.email || '',
+      website:   shipper.website || '',
+      bank_ids:  shipper.bank_ids,
     });
 
   function submit(e: React.FormEvent) {
@@ -104,6 +110,19 @@ export default function Edit() {
             {errors.phone && <InputError message={errors.phone} />}
           </div>
 
+          {/* Mobile */}
+          <div>
+            <Label htmlFor="mobile">Mobile</Label>
+            <input
+              id="mobile"
+              name="mobile"
+              value={data.mobile}
+              onChange={e => setData('mobile', e.target.value)}
+              className="w-full border px-3 py-2 rounded"
+            />
+            {errors.mobile && <InputError message={errors.mobile} />}
+          </div>
+
           {/* Email */}
           <div>
             <Label htmlFor="email">Email</Label>
@@ -118,7 +137,22 @@ export default function Edit() {
             {errors.email && <InputError message={errors.email} />}
           </div>
 
-          {/* Banks */}
+          {/* Website */}
+          <div>
+            <Label htmlFor="website">Website</Label>
+            <input
+              id="website"
+              name="website"
+              type="url"
+              placeholder="https://example.com"
+              value={data.website}
+              onChange={e => setData('website', e.target.value)}
+              className="w-full border px-3 py-2 rounded"
+            />
+            {errors.website && <InputError message={errors.website} />}
+          </div>
+
+          {/* Banks multi‑select */}
           <div>
             <Label htmlFor="bank_ids">Banks</Label>
             <Select
@@ -147,12 +181,13 @@ export default function Edit() {
             <Link href={route('shippers.index')}>Cancel</Link>
             <Transition
               show={recentlySuccessful}
-              enter="transition ease-in-out"
+              enter="transition ease-in-out duration-300"
               enterFrom="opacity-0"
-              leave="transition ease-in-out"
+              enterTo="opacity-100"
+              leave="transition ease-in-out duration-300"
               leaveTo="opacity-0"
             >
-              <p className="text-sm text-neutral-600">Updated</p>
+              <p className="text-sm text-green-600">Updated!</p>
             </Transition>
           </div>
         </form>

@@ -1,3 +1,5 @@
+// resources/js/Pages/Shippers/Create.tsx
+
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
@@ -10,31 +12,33 @@ import { Transition } from '@headlessui/react';
 import Select, { MultiValue } from 'react-select';
 
 type BankOption = { id: number; name: string };
-type Option = { value: number; label: string };
+type Option     = { value: number; label: string };
 
 export default function Create() {
-    const { banks } = usePage<{ banks: BankOption[] }>().props;
-    //console.log(banks);
+  const { banks } = usePage<{ banks: BankOption[] }>().props;
 
-  // map banks to react-select options
+  // react‑select bank options
   const options: Option[] = banks.map(b => ({
     value: b.id,
     label: b.name,
   }));
 
+  // include mobile & website in form state
   const { data, setData, post, processing, errors, recentlySuccessful } =
     useForm({
-      name: '',
-      address: '',
-      phone: '',
-      email: '',
-      bank_ids: [] as number[],
+      name:      '',
+      address:   '',
+      phone:     '',
+      email:     '',
+      mobile:    '',
+      website:   '',
+      bank_ids:  [] as number[],
     });
 
-  function submit(e: React.FormEvent) {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     post(route('shippers.store'));
-  }
+  };
 
   return (
     <AppLayout
@@ -76,7 +80,6 @@ export default function Create() {
               value={data.address}
               onChange={e => setData('address', e.target.value)}
               className="w-full border px-3 py-2 rounded"
-              
             />
             {errors.address && <InputError message={errors.address} />}
           </div>
@@ -90,9 +93,21 @@ export default function Create() {
               value={data.phone}
               onChange={e => setData('phone', e.target.value)}
               className="w-full border px-3 py-2 rounded"
-              
             />
             {errors.phone && <InputError message={errors.phone} />}
+          </div>
+
+          {/* Mobile */}
+          <div>
+            <Label htmlFor="mobile">Mobile</Label>
+            <input
+              id="mobile"
+              name="mobile"
+              value={data.mobile}
+              onChange={e => setData('mobile', e.target.value)}
+              className="w-full border px-3 py-2 rounded"
+            />
+            {errors.mobile && <InputError message={errors.mobile} />}
           </div>
 
           {/* Email */}
@@ -107,6 +122,21 @@ export default function Create() {
               className="w-full border px-3 py-2 rounded"
             />
             {errors.email && <InputError message={errors.email} />}
+          </div>
+
+          {/* Website */}
+          <div>
+            <Label htmlFor="website">Website</Label>
+            <input
+              id="website"
+              name="website"
+              type="url"
+              value={data.website}
+              onChange={e => setData('website', e.target.value)}
+              className="w-full border px-3 py-2 rounded"
+              placeholder="https://example.com"
+            />
+            {errors.website && <InputError message={errors.website} />}
           </div>
 
           {/* Banks multi‑select */}
@@ -138,12 +168,13 @@ export default function Create() {
             <Link href={route('shippers.index')}>Cancel</Link>
             <Transition
               show={recentlySuccessful}
-              enter="transition ease-in-out"
+              enter="transition ease-in-out duration-300"
               enterFrom="opacity-0"
-              leave="transition ease-in-out"
+              enterTo="opacity-100"
+              leave="transition ease-in-out duration-300"
               leaveTo="opacity-0"
             >
-              <p className="text-sm text-neutral-600">Created</p>
+              <p className="text-sm text-green-600">Created!</p>
             </Transition>
           </div>
         </form>

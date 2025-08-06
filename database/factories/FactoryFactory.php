@@ -1,23 +1,25 @@
 <?php
+
 namespace Database\Factories;
 
-use App\Models\Factory;
+use App\Models\Factory as FactoryModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class FactoryFactory extends Factory
 {
-    protected $model = Factory::class;
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = FactoryModel::class;
 
     public function definition()
     {
         return [
-            'name' => $this->faker->company,
-            'address' => $this->faker->address,
-            'contact' => $this->faker->phoneNumber,
-            'category' => $this->faker->randomElement(['knit', 'woven', 'processing']),
-            'profile' => $this->faker->paragraph,
-            'compliance' => $this->faker->companySuffix,
-            'production_capacity' => $this->faker->numberBetween(100, 10000),
+            'name' => $this->faker->company . ' Factory',
+            'address' => $this->faker->streetAddress . "\n" . $this->faker->city . ', ' . $this->faker->state,
+            // created_at / updated_at will be handled automatically by Laravel if you leave them off
         ];
     }
 }

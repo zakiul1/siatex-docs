@@ -14,12 +14,14 @@ class Shipper extends Model
         'name',
         'address',
         'phone',
+        'mobile',    // ← new
         'email',
-        'bank_ids',   // ← include bank_ids
+        'website',   // ← new
+        'bank_ids',
     ];
 
     protected $casts = [
-        'bank_ids' => 'array', // ← cast JSON to array
+        'bank_ids' => 'array',
     ];
 
     public function user()

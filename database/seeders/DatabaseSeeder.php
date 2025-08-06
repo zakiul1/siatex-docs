@@ -10,18 +10,21 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // create your Super Admin user
+        // 1) Create your Super‑Admin user
         $admin = User::factory()->create([
-            'name' => 'Test User',
+            'name' => 'Super Admin',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('12345678'),
             'level' => 'Super Admin',
         ]);
 
-        // call BankSeeder and CustomerSeeder
+        // 2) Call your other seeders, passing the Super‑Admin's ID
         $this->call([
-            BankSeeder::class,
-            CustomerSeeder::class,
+            BankSeeder::class,           // seeds banks (optionally with user_id)
+            CustomerSeeder::class,       // seeds customers (owned by $admin)
+            FactoryFactory::class,        // seeds factories (owned by $admin)
+            ShipperSeeder::class,        // seeds shippers (owned by $admin)
+            // add any others here...
         ]);
     }
 }

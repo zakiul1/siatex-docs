@@ -2,22 +2,24 @@
 
 namespace Database\Seeders;
 
-use App\Models\Bank;
-use App\Models\User;
 use Illuminate\Database\Seeder;
+use App\Models\Factory;
+use App\Models\User;
 
-class BankSeeder extends Seeder
+class FactoryFactory extends Seeder
 {
     public function run(): void
     {
+        // look up your Super Admin by email
         $admin = User::where('email', 'admin@gmail.com')->first();
 
         if (!$admin) {
-            $this->command->error('Super Admin not found; skipping bank seeding.');
+            $this->command->error('Super Admin not found; skipping factory seeding.');
             return;
         }
 
-        Bank::factory()
+        // create 10 factories owned by the Super Admin
+        Factory::factory()
             ->count(10)
             ->create([
                 'user_id' => $admin->id,

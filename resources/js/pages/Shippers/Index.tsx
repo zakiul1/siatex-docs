@@ -1,3 +1,5 @@
+// resources/js/Pages/Shippers/Index.tsx
+
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -22,7 +24,9 @@ type Shipper = {
   name: string;
   address: string;
   phone: string;
-  email: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  website?: string | null;
   bank_ids: number[];
 };
 
@@ -112,7 +116,9 @@ export default function Index() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>Mobile</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Website</TableHead>
                   <TableHead>Banks</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -123,7 +129,20 @@ export default function Index() {
                   <TableRow key={shipper.id}>
                     <TableCell>{shipper.name}</TableCell>
                     <TableCell>{shipper.phone}</TableCell>
+                    <TableCell>{shipper.mobile ?? '—'}</TableCell>
                     <TableCell>{shipper.email ?? '—'}</TableCell>
+                    <TableCell>
+                      {shipper.website
+                        ? <a
+                            href={shipper.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline"
+                          >
+                            {new URL(shipper.website).hostname}
+                          </a>
+                        : '—'}
+                    </TableCell>
                     <TableCell>
                       {(shipper.bank_ids || [])
                         .map((id) => bankLookup[id] || '—')
@@ -224,7 +243,10 @@ export default function Index() {
                     >
                       Cancel
                     </Button>
-                    <Button variant="destructive" onClick={handleConfirmDelete}>
+                    <Button
+                      variant="destructive"
+                      onClick={handleConfirmDelete}
+                    >
                       Delete
                     </Button>
                   </div>
